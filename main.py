@@ -1,31 +1,18 @@
-from flask import Flask, json, request, make_response
-import requests
-from time import sleep
+import socket
+import time
+import struct
 
-api = Flask(__name__)
-host, port = ("0.0.0.0", 8080)
+addr = (("192.168.4.1", 5000))
 
-@api.route('/', methods=['GET'])
-def index():
-    return json.dumps("server up")
 
-@api.route('/log', methods=['POST'])
-def log():
-    data = request.get_data()
-    print("data =", data)
-    print("request", request)
-    response = make_response("this is a response from python server", 200)
-    response.mimetype = "text/plain"
-    return response
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(addr)
 
-# while (True):
-#     # sleep(1000)
-#     print("making get request")
-#     print(requests.patch("http://192.168.4.1/start").content)
+msg = bytearray()
+for i in range(6): msg.append(48 + i)
 
-if __name__ == '__main__':
-    api.run(host=host, port=8080)
-    # while (True):
-    #     # sleep(1000)
-    #     print("making get request")
-    #     print(requests.get("http://192.168.4.1/").content)
+for i in range(6): client_socket.send(chr(msg[i]).encode())
+
+time.sleep(1)
+
+client_socket.close()
