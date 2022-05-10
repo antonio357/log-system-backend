@@ -1,4 +1,4 @@
-from flask import Flask, json, request
+from flask import Flask, json, request, make_response
 import requests
 from time import sleep
 
@@ -11,10 +11,12 @@ def index():
 
 @api.route('/log', methods=['POST'])
 def log():
-    data = request.get_json()
+    data = request.get_data()
     print("data =", data)
-    print("request.data", request)
-    return json.dumps("log recived")
+    print("request", request)
+    response = make_response("this is a response from python server", 200)
+    response.mimetype = "text/plain"
+    return response
 
 # while (True):
 #     # sleep(1000)
