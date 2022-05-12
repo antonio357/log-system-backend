@@ -1,19 +1,36 @@
 import socket
-import time
+
+# comunication sending and receiveing bytestreams
 
 addr = (("192.168.0.113", 5000))
-
-
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(addr)
-
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket.AF_INET, socket.SOCK_STREAM = ipv4, tcp
+s.connect(addr)
 print("connected to esp")
 
-msg = bytearray()
-for i in range(6): msg.append(48 + i)
-
-for i in range(6): client_socket.send(chr(msg[i]).encode())
-
-time.sleep(1)
-
-client_socket.close()
+init = "init"
+end = "end"
+lastIndicator = end
+data = ""
+logs = []
+incomplete_data = []
+try:
+    while True:
+        msg = s.recv(125)
+        # print(f"msg = {msg}") # 1024 tamanho do dado em bytes
+        msg = msg.decode("utf-8")
+        print(f"msg = {msg}")
+        if msg == init:
+            if lastIndicator == end:
+                data = ""
+                lastIndicator = init
+            else:
+                incomplete_data.append(data)
+                data = ""
+        elif msg == end:
+            logs.append(data)
+            data = ""
+            lastIndicator = end
+        else: data += msg
+except KeyboardInterrupt:
+    print(logs)
+    print(data)
