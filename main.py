@@ -1,5 +1,5 @@
 import socket
-
+# https://www.youtube.com/watch?v=8A4dqoGL62E&ab_channel=sentdex
 # comunication sending and receiveing bytestreams
 
 addr = (("192.168.0.113", 5000))
@@ -15,7 +15,7 @@ logs = []
 incomplete_data = []
 try:
     while True:
-        msg = s.recv(125)
+        msg = s.recv(124)
         # print(f"msg = {msg}") # 1024 tamanho do dado em bytes
         msg = msg.decode("utf-8")
         print(f"msg = {msg}")
