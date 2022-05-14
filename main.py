@@ -10,7 +10,7 @@ url = f"ws://{adrr}"
 
 counter = 0
 def on_message(ws, message):
-    global  counter
+    global counter
     print(f"message num {counter}")
     counter = counter + 1
 
