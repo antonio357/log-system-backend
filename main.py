@@ -1,15 +1,27 @@
 import websocket, time, rel
 
-ip, port = ("192.168.0.113", 81)
+ip, port = ("192.168.0.103", 81)
 adrr = f"{ip}:{port}"
 url = f"ws://{adrr}"
 
 def current_milli_time():
     return round(time.time() * 1000)
 
+def current_seconds_time():
+    return round(time.time())
+
+def closeConnection(ws):
+    global time_to_close
+    time = current_seconds_time() - time_to_close
+    print(f"seconds pased {time}")
+    if time >= 5:
+        print("closing connection")
+        ws.close()
+
 msgs = []
 corrupted_msgs = []
 last_time = current_milli_time()
+time_to_close = current_seconds_time()
 def on_message(ws, msg):
     global last_time
     now = current_milli_time()
@@ -17,6 +29,7 @@ def on_message(ws, msg):
     if len(msg) == 256: msgs.append((msg, response_time))
     else: corrupted_msgs.append((msg, response_time))
     last_time = now
+    closeConnection(ws)
 
 def on_error(ws, error):
     print(error)
