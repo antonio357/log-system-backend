@@ -13,8 +13,9 @@ def current_seconds_time():
 def closeConnection(ws):
     global time_to_close
     time = current_seconds_time() - time_to_close
-    print(f"seconds pased {time}")
+    # print(f"seconds pased {time}")
     if time >= 5:
+        ws.send('stop logs')
         print("closing connection")
         ws.close()
 
@@ -38,6 +39,7 @@ def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
 
 def on_open(ws):
+    ws.send('start logs')
     print("Connected to esp")
 
 if __name__ == "__main__":
