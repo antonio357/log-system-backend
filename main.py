@@ -1,6 +1,6 @@
-import websocket, time, rel
+import websocket, time, rel, threading
 
-ip, port = ("192.168.0.103", 81)
+ip, port = ("192.168.1.104", 81)
 adrr = f"{ip}:{port}"
 url = f"ws://{adrr}"
 
@@ -10,6 +10,14 @@ def current_milli_time():
 def current_seconds_time():
     return round(time.time())
 
+def beforeclosing(ws):
+    # usar a a thread https://www.youtube.com/watch?v=cdPZ1pJACMI&ab_channel=TechWithTim
+    time.sleep(1)
+    mean_time = (sum([i[-1] for i in msgs]) + sum([i[-1] for i in corrupted_msgs])) / (
+            len(msgs) + len(corrupted_msgs))
+    print(f"received msgs: {len(msgs)} corrupted_msgs: {len(corrupted_msgs)} mean time: {mean_time}")
+    # ws.close()
+
 def closeConnection(ws):
     global time_to_close
     time = current_seconds_time() - time_to_close
@@ -17,7 +25,9 @@ def closeConnection(ws):
     if time >= 5:
         ws.send('stop logs')
         print("closing connection")
-        ws.close()
+        if threading.activeCount() < 2:
+            threading.Thread(target=beforeclosing, args=(ws,)).start()
+            print(f" active threads = {threading.activeCount()}")
 
 msgs = []
 corrupted_msgs = []
@@ -54,7 +64,5 @@ if __name__ == "__main__":
     rel.signal(2, rel.abort)  # Keyboard Interrupt
     rel.dispatch()
 
-mean_time = (sum([i[-1] for i in msgs]) + sum([i[-1] for i in corrupted_msgs])) / (len(msgs) + len(corrupted_msgs))
-print(f"received msgs: {len(msgs)} corrupted_msgs: {len(corrupted_msgs)} mean time: {mean_time}")
-
+print(f" active threads = {threading.activeCount()}")
 # https://github.com/websocket-client/websocket-client
