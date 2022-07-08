@@ -1,63 +1,95 @@
-import websocket, time, rel, threading
+import rel as autoReconn
+import threading
+import time
+import websocket
+import consts
+from LogsStatus import LogsStatus
 
-ip, port = ("192.168.1.199", 81)
-adrr = f"{ip}:{port}"
-url = f"ws://{adrr}"
+# wst = threading.Thread(target=ws.run_forever)
+#     wst.daemon = True
+#     wst.start()
+#
+#     conn_timeout = 5
+#     while not ws.sock.connected and conn_timeout:
+#         sleep(1)
+#         conn_timeout -= 1
+#
+#     msg_counter = 0
+#     while ws.sock.connected:
+#         ws.send('Hello world %d'%msg_counter)
+#         sleep(1)
+#         msg_counter += 1
 
-def current_milli_time():
-    return round(time.time() * 1000)
+class LogsConn:
+    def __init__(self):
+        self.logsStatus = LogsStatus()
+        self.ws = websocket.WebSocketApp(consts.LogsConn.URL.value,
+                               on_open=self.on_open,
+                               on_message=self.on_message,
+                               on_error=self.on_error,
+                               on_close=self.on_close)
+        self.runThread = threading.Thread(target=self.ws.run_forever, kwargs={"dispatcher": autoReconn})
+        self.runThread.daemon = True
+        self.runThread.start()
+        self.runThread.run()
 
-def current_seconds_time():
-    return round(time.time())
+    def sendMsg(self, msg):
+        if (self.ws.sock.connected):
+            self.ws.send(msg)
 
-def beforeclosing(ws):
-    time.sleep(1)
-    mean_time = (sum([i[-1] for i in msgs]) + sum([i[-1] for i in corrupted_msgs])) / (
-            len(msgs) + len(corrupted_msgs))
-    print(f"received msgs: {len(msgs)} corrupted_msgs: {len(corrupted_msgs)} mean time: {mean_time}")
+    def connect(self):
+        self.logsStatus.reset()
+        # Set dispatcher to automatic reconnection
+        # self.runThread.run()
+        # runs automatic reconnection
+        autoReconn.dispatch()
 
-def closeConnection(ws):
-    global time_to_close
-    time = current_seconds_time() - time_to_close
-    # print(f"seconds pased {time}")
-    if time >= 5:
-        ws.send('stop logs')
-        print("closing connection")
-        if threading.activeCount() < 2:
-            threading.Thread(target=beforeclosing, args=(ws,)).start()
-            print(f" active threads = {threading.activeCount()}")
+    def close(self):
+        # Interrupt rel
+        autoReconn.abort()
+        self.ws.close()
 
-msgs = []
-corrupted_msgs = []
-last_time = current_milli_time()
-time_to_close = current_seconds_time()
-def on_message(ws, msg):
-    global last_time
-    now = current_milli_time()
-    response_time = now - last_time
-    if len(msg) == 256: msgs.append((msg, response_time))
-    else: corrupted_msgs.append((msg, response_time))
-    last_time = now
-    closeConnection(ws)
+    def start(self):
+        print("starting logs")
+        self.logsStatus.reset()
+        self.sendMsg(consts.LogsConn.START_LOGS_CMD.value)
 
-def on_error(ws, error):
-    print(error)
+    def stop(self):
+        print("stoping logs")
+        self.sendMsg(consts.LogsConn.STOP_LOGS_CMD.value)
+        # evento de espera
+        autoReconn.event(self.logsStoped())
 
-def on_close(ws, close_status_code, close_msg):
-    print("### closed ###")
+    def logsStoped(self):
+        time.sleep(1)
+        print("logs stoped")
+        self.logsStatus.printStatus()
 
-def on_open(ws):
-    ws.send('start logs')
-    print("Connected to esp")
+    def on_message(self, ws, msg):
+        log = msg
+        self.logsStatus.checkMsg(log)
+
+    def on_open(self, ws):
+        print("connected to esp")
+        print(f"threads active = {threading.activeCount()}")
+        self.logsStatus.printStatus()
+
+    def on_error(self, ws, error):
+        print("error")
+        print(f"threads active = {threading.activeCount()}")
+        self.logsStatus.printStatus()
+
+    def on_close(self, ws, close_status_code, close_msg):
+        print("closed connection")
+        print(f"threads active = {threading.activeCount()}")
+        self.logsStatus.printStatus()
+
 
 if __name__ == "__main__":
-    ws = websocket.WebSocketApp(url,
-                              on_open=on_open,
-                              on_message=on_message,
-                              on_error=on_error,
-                              on_close=on_close)
-
-    ws.run_forever(dispatcher=rel)  # Set dispatcher to automatic reconnection
-    rel.signal(2, rel.abort)  # Keyboard Interrupt
-    rel.dispatch()
-    print(f" active threads = {threading.activeCount()}")
+    logs = LogsConn()
+    logs.connect()
+    time.sleep(1)
+    logs.start()
+    time.sleep(4)
+    logs.stop()
+    print("end of main")
