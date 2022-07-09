@@ -20,6 +20,7 @@ def ws_open(ws):
 def ws_thread(*args):
     ws = websocket.WebSocketApp("ws://192.168.1.199:81", on_open=ws_open, on_message=ws_message)
     ws.run_forever()
+    print("got here")
 
 # Start a new thread for the WebSocket interface
 # _thread.start_new_thread(ws_thread, ())
@@ -28,3 +29,19 @@ threading.Thread(target=ws_thread).start()
 while True:
     time.sleep(1)
     print("Main thread: %d" % time.time())
+
+
+# wst = threading.Thread(target=ws.run_forever)
+#     wst.daemon = True
+#     wst.start()
+#
+#     conn_timeout = 5
+#     while not ws.sock.connected and conn_timeout:
+#         sleep(1)
+#         conn_timeout -= 1
+#
+#     msg_counter = 0
+#     while ws.sock.connected:
+#         ws.send('Hello world %d'%msg_counter)
+#         sleep(1)
+#         msg_counter += 1
