@@ -12,18 +12,18 @@ class LogsStatus:
         return time.time() * 1000
 
     def checkMsg(self, msg):
+        msgs_interval = 0
         if not self.prev_msg_time:
             self.prev_msg_time = self.currentTimeMili()
         else:
             self.msg_time = self.currentTimeMili()
             msgs_interval = self.msg_time - self.prev_msg_time
-
-            if len(msg) == 256:
-                self.msgs.append((msg, msgs_interval))
-            else:
-                self.corrupted_msgs.append((msg, msgs_interval))
-
             self.prev_msg_time = self.msg_time
+
+        if len(msg) == 256:
+            self.msgs.append((msg, msgs_interval))
+        else:
+            self.corrupted_msgs.append((msg, msgs_interval))
 
     def reset(self):
         self.msgs.clear()

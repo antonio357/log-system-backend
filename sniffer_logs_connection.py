@@ -2,6 +2,7 @@ from consts import LogsConn
 from logs_status import LogsStatus
 from websocket import WebSocketApp
 from threading import Thread
+from _thread import start_new_thread
 from time import sleep, time
 
 class SnifferLogsConnection:
@@ -9,6 +10,7 @@ class SnifferLogsConnection:
         self.logsStatus = LogsStatus()
         self.websocket = None
         self.name = "sniffer"
+        self.gotLatestLogs = False
 
     def connect(self):
         self.websocket = WebSocketApp(LogsConn.URL.value,
@@ -24,6 +26,7 @@ class SnifferLogsConnection:
     def startLogs(self):
         print(f"{self.name} starting logs")
         self.logsStatus.reset()
+        self.gotLatestLogs = False
         self.waitConnection()
         self.websocket.send(LogsConn.START_LOGS_CMD.value)
 
@@ -33,7 +36,7 @@ class SnifferLogsConnection:
         Thread(target=self.waitLatestLogs).start()
 
     def waitLatestLogs(self):
-        sleep(2)
+        sleep(1)
         self.logsStatus.printStatus()
 
     def onMessage(self, websocket, message):
