@@ -3,7 +3,8 @@ from logs_status import LogsStatus
 from websocket import WebSocketApp
 from threading import Thread
 from time import sleep, time
-import rel as autoConnect
+import rel as autoReconnect
+import asyncio
 
 class SnifferLogsConnection:
     def __init__(self, lifeTimeSeconds=None):
@@ -11,23 +12,27 @@ class SnifferLogsConnection:
         self._logsStatus = LogsStatus()
 
         self._websocket = None
-        self._thread = Thread(target=self._connect)
-        self._thread.start()
-        self._waitConnection()
+        self.connect()
 
         # lifeTimeSeconds is just for tests
         if lifeTimeSeconds:
             Thread(target=self._stopLogsAfterSeconds, kwargs={"seconds": lifeTimeSeconds}).start()
 
-    def _connect(self):
-        self.websocket = WebSocketApp(LogsConn.URL.value,
+    def connect(self):
+        if not self._isConnected():
+            self._thread = Thread(target=self._runConnection)
+            self._thread.start()
+            self._waitConnection()
+
+    def _runConnection(self):
+        self._websocket = WebSocketApp(LogsConn.URL.value,
                                       on_open=self._onOpen,
                                       on_message=self._onMessage,
                                       on_error=self._onError,
                                       on_close=self._onClose)
 
-        self.websocket.run_forever(dispatcher=autoConnect)
-        autoConnect.dispatch()
+        self._websocket.run_forever(dispatcher=autoReconnect)
+        autoReconnect.dispatch()
 
     def _waitConnection(self):
         startTime = self._nowTimeInSeconds()
@@ -36,19 +41,19 @@ class SnifferLogsConnection:
                 raise TimeoutError(f"{self._name} error: took more than 5 seconds to connect")
 
     def _isConnected(self):
-        if self.websocket and self.websocket.sock.connected:
+        if self._websocket and self._websocket.sock.connected:
             return True
         return False
 
-    def _closeConnection(self):
-        self.websocket.close()
+    def closeConnection(self):
+        autoReconnect.abort()
+        self._websocket.close()
 
     def _onOpen(self, websocket):
         self._printStrings("connected")
         self._logsStatus.printStatus()
 
     def _onMessage(self, websocket, message):
-        print(f"dispatcher = {self.dispatcher}")
         self._logsStatus.checkMsg(message)
 
     def _onError(self, websocket, error):
@@ -64,11 +69,11 @@ class SnifferLogsConnection:
     def startLogs(self):
         self._printStrings("starting logs")
         self._logsStatus.reset()
-        self.websocket.send(LogsConn.START_LOGS_CMD.value)
+        self._websocket.send(LogsConn.START_LOGS_CMD.value)
 
     def stopLogs(self):
         self._printStrings("stopping logs")
-        self.websocket.send(LogsConn.STOP_LOGS_CMD.value)
+        self._websocket.send(LogsConn.STOP_LOGS_CMD.value)
         Thread(target=self._waitLatestLogs).start()
 
     def _waitLatestLogs(self):
