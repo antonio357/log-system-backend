@@ -3,6 +3,7 @@ from logs_status import LogsStatus
 from websocket import WebSocketApp
 from threading import Thread
 from time import sleep, time
+import rel as autoConnect
 
 class SnifferLogsConnection:
     def __init__(self, lifeTimeSeconds=None):
@@ -24,7 +25,9 @@ class SnifferLogsConnection:
                                       on_message=self._onMessage,
                                       on_error=self._onError,
                                       on_close=self._onClose)
-        self.websocket.run_forever()
+
+        self.websocket.run_forever(dispatcher=autoConnect)
+        autoConnect.dispatch()
 
     def _waitConnection(self):
         startTime = self._nowTimeInSeconds()
@@ -45,6 +48,7 @@ class SnifferLogsConnection:
         self._logsStatus.printStatus()
 
     def _onMessage(self, websocket, message):
+        print(f"dispatcher = {self.dispatcher}")
         self._logsStatus.checkMsg(message)
 
     def _onError(self, websocket, error):
@@ -58,8 +62,7 @@ class SnifferLogsConnection:
         self._logsStatus.printStatus()
 
     def startLogs(self):
-        self._printStrings("")
-        print(f"{self._name} starting logs")
+        self._printStrings("starting logs")
         self._logsStatus.reset()
         self.websocket.send(LogsConn.START_LOGS_CMD.value)
 
