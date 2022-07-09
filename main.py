@@ -1,11 +1,13 @@
 from time import sleep
-from datetime import datetime
 from sniffer_logs_connection import SnifferLogsConnection
+from threading import activeCount
 
 
 if __name__ == "__main__":
     snifferLogsConnection = SnifferLogsConnection()
-    for i in range(3):
+    snifferLogsConnection.connect()
+
+    for i in range(2):
         snifferLogsConnection.startLogs()
         sleep(5)
         snifferLogsConnection.stopLogs()
@@ -14,7 +16,7 @@ if __name__ == "__main__":
     snifferLogsConnection.closeConnection()
     snifferLogsConnection.connect()
 
-    for i in range(3):
+    for i in range(2):
         snifferLogsConnection.startLogs()
         sleep(5)
         snifferLogsConnection.stopLogs()
@@ -22,7 +24,7 @@ if __name__ == "__main__":
 
     snifferLogsConnection.closeConnection()
     del snifferLogsConnection
-
+    print(f"threads = {activeCount()}")
     # react https://www.youtube.com/watch?v=azvcvbeRZ08&ab_channel=WebDevJunkie ->
     # https://github.com/codyseibert/youtube/tree/master/realtime-chart-websockets
     # while True:
