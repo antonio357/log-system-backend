@@ -9,18 +9,14 @@ class SnifferLogsConnection:
         self.logsStatus = LogsStatus()
         self.websocket = None
         self.name = "sniffer"
-        self.startTime = None
 
     def connect(self):
-        print(f"{self.name} beginning of connect")
         self.websocket = WebSocketApp(LogsConn.URL.value,
                                       on_open=self.onOpen,
                                       on_message=self.onMessage,
                                       on_error=self.onError,
                                       on_close=self.onClose)
-        print(f"{self.name} running of connect")
         self.websocket.run_forever()
-        print(f"{self.name} end of connect")
 
     def closeConnection(self):
         self.websocket.close()
