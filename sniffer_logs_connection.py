@@ -3,16 +3,14 @@ from logs_status import LogsStatus
 from websocket import WebSocketApp
 from threading import Thread
 from time import sleep, time
-import rel as autoReconnect
-import asyncio
+# import rel as autoReconnect
+
 
 class SnifferLogsConnection:
     def __init__(self, lifeTimeSeconds=None):
         self._name = "sniffer"
         self._logsStatus = LogsStatus()
-
         self._websocket = None
-        self.connect()
 
         # lifeTimeSeconds is just for tests
         if lifeTimeSeconds:
@@ -31,23 +29,29 @@ class SnifferLogsConnection:
                                       on_error=self._onError,
                                       on_close=self._onClose)
 
-        self._websocket.run_forever(dispatcher=autoReconnect)
-        autoReconnect.dispatch()
+        self._websocket.run_forever()
+        # self._websocket.run_forever(dispatcher=autoReconnect)
+        # autoReconnect.dispatch()
 
     def _waitConnection(self):
         startTime = self._nowTimeInSeconds()
+        limit_time = 5
         while not self._isConnected():
-            if self._nowTimeInSeconds() - startTime > 5:
-                raise TimeoutError(f"{self._name} error: took more than 5 seconds to connect")
+            if self._nowTimeInSeconds() - startTime > limit_time:
+                raise TimeoutError(f"{self._name} error: took more than {limit_time} seconds to connect")
 
     def _isConnected(self):
-        if self._websocket and self._websocket.sock.connected:
-            return True
-        return False
+        try:
+            if self._websocket and self._websocket.sock.connected:
+                return True
+        except:
+            return False
 
     def closeConnection(self):
-        autoReconnect.abort()
+        # autoReconnect.signal(2, autoReconnect.abort)
         self._websocket.close()
+        while self._isConnected():
+            continue
 
     def _onOpen(self, websocket):
         self._printStrings("connected")
