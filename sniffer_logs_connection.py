@@ -22,20 +22,13 @@ class SnifferLogsConnection:
         self.websocket.run_forever()
         print(f"{self.name} end of connect")
 
-    def isConnected(self):
-        if self.websocket and self.websocket.sock.connected:
-            return True
-        return False
-
     def closeConnection(self):
         self.websocket.close()
 
     def startLogs(self):
         print(f"{self.name} starting logs")
         self.logsStatus.reset()
-        startTime = self.nowTimeInSeconds()
-        while not self.isConnected():
-            self.connectingTimeOut(startTime)
+        self.waitConnection()
         self.websocket.send(LogsConn.START_LOGS_CMD.value)
 
     def stopLogs(self):
@@ -65,6 +58,13 @@ class SnifferLogsConnection:
     def nowTimeInSeconds(self):
         return int(time())
 
-    def connectingTimeOut(self, startTime):
-        if self.nowTimeInSeconds() - startTime > 5:
-            raise Exception(f"{self.name} took to long to connect")
+    def isConnected(self):
+        if self.websocket and self.websocket.sock.connected:
+            return True
+        return False
+
+    def waitConnection(self):
+        startTime = self.nowTimeInSeconds()
+        while not self.isConnected():
+            if self.nowTimeInSeconds() - startTime > 5:
+                raise TimeoutError(f"{self.name} error: took more than 5 seconds to connect")
