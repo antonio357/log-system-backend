@@ -36,5 +36,6 @@ class LogsStatus:
             mean_time = (sum([i[-1] for i in self.msgs]) + sum([i[-1] for i in self.corrupted_msgs])) / (
                 len(self.msgs) + len(self.corrupted_msgs))
             print(f"received msgs: {len(self.msgs)} corrupted_msgs: {len(self.corrupted_msgs)} mean time: {mean_time}")
+            print(f" msg example = {self.corrupted_msgs[0]}")
         else:
             print("no status")
